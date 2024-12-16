@@ -26,7 +26,7 @@ int main() {
     int yellow = 3;
     int red = 7;
 
-    std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx &cv);
+    std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv);
     std::thread tTrafficLight(trafficLight, green, yellow, red);
 
     tButton.join();
