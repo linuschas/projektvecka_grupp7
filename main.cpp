@@ -22,9 +22,15 @@ enum class State
 void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *buttonPress, std::mutex *mtx, std::condition_variable *cv);
 
 int main() {
+    int green = 10;
+    int yellow = 3;
+    int red = 7;
+
     std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx &cv);
+    std::thread tTrafficLight(trafficLight, green, yellow, red);
 
     tButton.join();
+    tTrafficLight.join();
 
     return 0;
 }
@@ -81,9 +87,9 @@ void trafficLight(int green, int yellow, int red)
 
 void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *buttonPress, std::mutex *mtx, std::condition_variable *cv) {
     std::random_device rd;
+    std::mt19937 gen(rd());
 
     while (*isRunning) {
-        std::mt19937 gen(rd());
         std::uniform_int_distribution<> dist(1, 10);
 
         int randNum = dist(gen);
