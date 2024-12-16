@@ -8,11 +8,15 @@
 std::mutex mtx;
 std::condition_variable cv;
 std::atomic<bool> buttonPress(false);
+std::atomic<bool> isRunning(true);
 
 void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *buttonPress, std::mutex *mtx, std::condition_variable *cv);
 
 
 int main() {
+    std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv);
+
+    tButton.join();
 
     return 0;
 }
