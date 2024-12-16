@@ -20,6 +20,7 @@ enum class State
 };
 
 void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *buttonPress, std::mutex *mtx, std::condition_variable *cv);
+void trafficLight(int green, int yellow, int red);
 
 int main() {
     int green = 10;
@@ -54,15 +55,17 @@ void displayLight(State state)
     std::cout << "Light is: " << strState << "\n";
 }
 
-void trafficLight(int green, int yellow, int red) 
+void trafficLight(int green, int yellow, int red)
 {
     State state = State::RED;
     displayLight(state);
 
     while(isRunning)
     {
-        std::unique_lock<std::mutex> lck(mtx);
-        cv.wait(lck, []{ return buttonPress.load(); } );
+        {
+            std::unique_lock<std::mutex> lck(mtx);
+            cv.wait(lck, [] { return buttonPress.load() || isRunning; });
+        }
 
         if (buttonPress)
         {
