@@ -35,11 +35,31 @@ int main() {
     return 0;
 }
 
+void displayLight(State state)
+{
+    std::string strState;
+    switch (state)
+    {
+        case State::GREEN:
+            strState = "GREEN";
+            break;
+        case State::YELLOW:
+            strState = "YELLOW";
+            break;
+        case State::RED:
+            strState = "RED";
+            break;
+    }
+    std::lock_guard<std::mutex> lck(mtx);
+    std::cout << "Light is: " << strState << "\n";
+}
+
 void trafficLight(int green, int yellow, int red) 
 {
     State state = State::RED;
+    displayLight(state);
 
-    while(true)
+    while(isRunning)
     {
         std::unique_lock<std::mutex> lck(mtx);
         cv.wait(lck, []{ return buttonPress.load(); } );
@@ -66,22 +86,7 @@ void trafficLight(int green, int yellow, int red)
                 break;
             }
         }
-
-        std::string strState;
-        switch (state)
-        {
-        case State::GREEN:
-            strState = "GREEN";
-            break;
-        case State::YELLOW:
-            strState = "YELLOW";
-            break;
-        case State::RED:
-            strState = "RED";
-            break;
-        }
-        std::lock_guard<std::mutex> lck(mtx);
-        std::cout << "Light is: " << strState << "\n";
+        displayLight(state);
     }
 }
 
