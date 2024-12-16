@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <random>
+#include <conio.h>
 
 std::mutex mtx;
 std::condition_variable cv;
@@ -11,12 +12,15 @@ std::atomic<bool> buttonPress(false);
 std::atomic<bool> isRunning(true);
 
 void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *buttonPress, std::mutex *mtx, std::condition_variable *cv);
+void takeInput();
 
 
 int main() {
     std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv);
+    std::thread tInput(takeInput);
 
     tButton.join();
+    tInput.join();
 
     return 0;
 }
@@ -35,5 +39,15 @@ void buttonSimulator(const std::atomic_bool *isRunning, std::atomic_bool *button
         *buttonPress = true;
         cv->notify_all();
         mtx->unlock();
+    }
+}
+
+void takeInput() {
+    while (isRunning) {
+        if (getch() == 'q') {
+            mtx.lock();
+            isRunning = false;
+            mtx.unlock();
+        }
     }
 }
