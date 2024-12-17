@@ -22,6 +22,7 @@ std::atomic<bool> pedestrianCrossing(false);
 constexpr int GREEN_TIME  = 10;
 constexpr int YELLOW_TIME = 3;
 constexpr int RED_TIME    = 10;
+constexpr int BUTTON_TIME = 20;
 
 enum class State
 {
@@ -33,13 +34,13 @@ enum class State
 void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* buttonPress,
                      std::mutex* mtx, std::condition_variable* cv,
                      std::atomic_bool* pedestrianCrossing);
-void trafficLight(int green, int yellow, int red);
+void trafficLight(int green, int yellow, int red, int buttonTime);
 void keyboardHandler();
 
 int main()
 {
     std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv, &pedestrianCrossing);
-    std::thread tTrafficLight(trafficLight, GREEN_TIME, YELLOW_TIME, RED_TIME);
+    std::thread tTrafficLight(trafficLight, GREEN_TIME, YELLOW_TIME, RED_TIME, BUTTON_TIME);
     std::thread tKeyboardHandler(keyboardHandler);
 
     tButton.join();
@@ -131,7 +132,7 @@ void displayLight(State state)
     std::cout << "Traffic light is: " << strState << "\n";
 }
 
-void trafficLight(int green, int yellow, int red)
+void trafficLight(int green, int yellow, int red, int buttonTime)
 {
     State state = State::GREEN;
 
@@ -175,7 +176,7 @@ void trafficLight(int green, int yellow, int red)
             case State::RED:
                 if (pedestrianCrossing)
                 {
-                    sleepWithInterrupt(20);
+                    sleepWithInterrupt(buttonTime);
                     pedestrianCrossing = false;
                 }
                 else
