@@ -97,8 +97,11 @@ void keyboardHandler()
             else
             {
                 std::lock_guard<std::mutex> lck(mtx);
-                buttonPress = true;
-                cv.notify_all();
+                if (!pedestrianCrossing)
+                {
+                    buttonPress = true;
+                    cv.notify_all();
+                }
             }
         }
         // Reduce CPU usage
@@ -168,7 +171,7 @@ void trafficLight()
     while (isRunning)
     {
         // Wait for button press or state change
-        bool buttonPressScope = false; // Avoid race condition and change state only once
+        bool buttonPressScope = false;  // Avoid race condition and change state only once
         {
             std::unique_lock<std::mutex> lck(mtx);
             cv.wait(lck, [] { return buttonPress || isRunning; });
@@ -238,14 +241,15 @@ void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* button
 
     while (*isRunning)
     {
-        //std::cout << "Hello from button simulator.\n";
+        // std::cout << "Hello from button simulator.\n";
         std::uniform_int_distribution<> dist(20, 30);
         int randNum = dist(gen);
-        
+
         // Wait for the pedestrian to cross or the program to exit
         {
             std::unique_lock<std::mutex> lck(*mtx);
-            cv->wait(lck, [pedestrianCrossing, isRunning] { return !pedestrianCrossing->load() || !isRunning->load(); });
+            cv->wait(lck, [pedestrianCrossing, isRunning]
+                     { return !pedestrianCrossing->load() || !isRunning->load(); });
         }
 
         if (!isRunning->load())
