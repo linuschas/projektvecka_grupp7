@@ -160,7 +160,8 @@ void displayLight(State state)
             break;
     }
     std::lock_guard<std::mutex> lck(mtx);
-    std::cout << "Traffic light is: " << strState << "\n";
+    std::cout << "Traffic light state: " << strState
+              << (pedestrianCrossing ? " (Pedestrian crossing)" : "") << "\n";
 }
 
 void trafficLight()
@@ -194,7 +195,7 @@ void trafficLight()
             state              = State::YELLOW_AFTER_GREEN;
             buttonPress        = false;
             pedestrianCrossing = true;
-            std::cout << "Button is pressed, pedestrian is crossing.\n";
+            std::cout << "Button is pressed.\n";
         }
 
         displayLight(state);
