@@ -161,7 +161,7 @@ void trafficLight(int green, int yellow, int red, int buttonTime)
     while (isRunning)
     {
         // Wait for button press or state change
-        bool buttonPressScope = false;
+        bool buttonPressScope = false; // Avoid race condition and change state only once
         {
             std::unique_lock<std::mutex> lck(mtx);
             cv.wait(lck, [] { return buttonPress || isRunning; });
