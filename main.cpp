@@ -1,3 +1,15 @@
+/*
+    Traffic light simulation with pedestrian crossing button.
+    The traffic light has three states: green, yellow, and red.
+    The traffic light stays green for 10 seconds, yellow for 3 seconds, and red for 10 seconds.
+    The pedestrian crossing button is pressed every 20-30 seconds to simulate crossing.
+    When the button is pressed, the traffic light changes to red and the pedestrian can cross.
+    The pedestrian crossing takes 20 seconds.
+    The traffic light changes to green after the pedestrian has crossed.
+    Button press can also be simulated by pressing any key.
+    The program can be exited by pressing 'q'.
+*/
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -52,6 +64,7 @@ int main()
 }
 
 // Sleep function that checks for interrupt every 100ms for fast keyboard response
+// Second is multiplied by 10 to get the number of 100ms intervals for ish seconds.
 void sleepWithInterrupt(int seconds)
 {
     for (int i = 0; i < seconds * 10; ++i)
@@ -87,6 +100,7 @@ void keyboardHandler()
                 cv.notify_all();
             }
         }
+        // Reduce CPU usage
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 #else
@@ -111,6 +125,7 @@ void keyboardHandler()
             buttonPress = true;
             cv.notify_all();
         }
+        // Reduce CPU usage
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
