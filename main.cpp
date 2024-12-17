@@ -70,12 +70,12 @@ void sleepWithInterrupt(int seconds)
 {
     for (int i = 0; i < seconds * 10; ++i)
     {
-        if (!isRunning || buttonPress)
+        std::unique_lock<std::mutex> lck(mtx);
+        if (cv.wait_for(lck, std::chrono::milliseconds(100),
+                        [] { return buttonPress || !isRunning; }))
         {
-            cv.notify_all();
             return;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -188,8 +188,9 @@ void trafficLight()
             break;
 
         // If button is pressed and the state is not red, change to red and let the pedestrian cross
-        if (buttonPressScope && state != State::GREEN && !pedestrianCrossing)
+        if (buttonPressScope && state != State::RED && !pedestrianCrossing)
         {
+            std::lock_guard<std::mutex> lck(mtx);
             state              = State::YELLOW_AFTER_GREEN;
             buttonPress        = false;
             pedestrianCrossing = true;
@@ -214,6 +215,7 @@ void trafficLight()
                 state = State::GREEN;
                 if (pedestrianCrossing)
                 {
+                    std::lock_guard<std::mutex> lck(mtx);
                     pedestrianCrossing = false;
                 }
                 break;
@@ -245,22 +247,18 @@ void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* button
         std::uniform_int_distribution<> dist(20, 30);
         int randNum = dist(gen);
 
-        // Wait for the pedestrian to cross or the program to exit
-        {
-            std::unique_lock<std::mutex> lck(*mtx);
-            cv->wait(lck, [pedestrianCrossing, isRunning]
-                     { return !pedestrianCrossing->load() || !isRunning->load(); });
-        }
-
         if (!isRunning->load())
             break;
 
         // std::this_thread::sleep_for(std::chrono::seconds(randNum));
         sleepWithInterrupt(randNum);
 
-        mtx->lock();
-        *buttonPress = true;
-        cv->notify_all();
-        mtx->unlock();
+        // If the pedestrian is crossing, don't press the button
+        if (!pedestrianCrossing->load())
+        {
+            std::lock_guard<std::mutex> lck(*mtx);
+            *buttonPress = true;
+            cv->notify_all();
+        }
     }
 }
