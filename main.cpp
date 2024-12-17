@@ -17,10 +17,11 @@ std::mutex mtx;
 std::condition_variable cv;
 std::atomic<bool> buttonPress(false);
 std::atomic<bool> isRunning(true);
+std::atomic<bool> pedestrianCrossing(false);
 
 constexpr int GREEN_TIME  = 10;
 constexpr int YELLOW_TIME = 3;
-constexpr int RED_TIME    = 7;
+constexpr int RED_TIME    = 10;
 
 enum class State
 {
@@ -30,13 +31,14 @@ enum class State
 };
 
 void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* buttonPress,
-                     std::mutex* mtx, std::condition_variable* cv);
+                     std::mutex* mtx, std::condition_variable* cv,
+                     std::atomic_bool* pedestrianCrossing);
 void trafficLight(int green, int yellow, int red);
 void keyboardHandler();
 
 int main()
 {
-    std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv);
+    std::thread tButton(buttonSimulator, &isRunning, &buttonPress, &mtx, &cv, &pedestrianCrossing);
     std::thread tTrafficLight(trafficLight, GREEN_TIME, YELLOW_TIME, RED_TIME);
     std::thread tKeyboardHandler(keyboardHandler);
 
@@ -132,14 +134,13 @@ void displayLight(State state)
 void trafficLight(int green, int yellow, int red)
 {
     State state = State::GREEN;
-    // displayLight(state);
 
     while (isRunning)
     {
         bool buttonPressScope = false;
         {
             std::unique_lock<std::mutex> lck(mtx);
-            cv.wait(lck, [] { return buttonPress.load() || isRunning; });
+            cv.wait(lck, [] { return buttonPress || isRunning; });
 
             if (buttonPress)
             {
@@ -151,11 +152,12 @@ void trafficLight(int green, int yellow, int red)
         if (!isRunning)
             break;
 
-        if (buttonPressScope)
+        if (buttonPressScope && state != State::RED)
         {
-            state       = State::GREEN;
-            buttonPress = false;
-            std::cout << "Button is pressed\n";
+            state              = State::RED;
+            buttonPress        = false;
+            pedestrianCrossing = true;
+            std::cout << "Button is pressed, pedestrian is crossing.\n";
         }
 
         displayLight(state);
@@ -171,7 +173,15 @@ void trafficLight(int green, int yellow, int red)
                 state = State::RED;
                 break;
             case State::RED:
-                sleepWithInterrupt(red);
+                if (pedestrianCrossing)
+                {
+                    sleepWithInterrupt(20);
+                    pedestrianCrossing = false;
+                }
+                else
+                {
+                    sleepWithInterrupt(red);
+                }
                 state = State::GREEN;
                 break;
         }
@@ -179,12 +189,13 @@ void trafficLight(int green, int yellow, int red)
 }
 
 void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* buttonPress,
-                     std::mutex* mtx, std::condition_variable* cv)
+                     std::mutex* mtx, std::condition_variable* cv,
+                     std::atomic_bool* pedestrianCrossing)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    while (*isRunning)
+    while (*isRunning && !pedestrianCrossing)
     {
         std::uniform_int_distribution<> dist(20, 30);
         int randNum = dist(gen);
