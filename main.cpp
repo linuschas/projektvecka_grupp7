@@ -19,6 +19,7 @@ std::atomic<bool> buttonPress(false);
 std::atomic<bool> isRunning(true);
 std::atomic<bool> pedestrianCrossing(false);
 
+// Traffic light times in seconds
 constexpr int GREEN_TIME  = 10;
 constexpr int YELLOW_TIME = 3;
 constexpr int RED_TIME    = 10;
@@ -50,6 +51,7 @@ int main()
     return 0;
 }
 
+// Sleep function that checks for interrupt every 100ms for fast keyboard response
 void sleepWithInterrupt(int seconds)
 {
     for (int i = 0; i < seconds * 10; ++i)
@@ -63,6 +65,7 @@ void sleepWithInterrupt(int seconds)
     }
 }
 
+// Keyboard handling for Windows and Mac/Linux, q for exit, any other key for button press
 void keyboardHandler()
 {
 #ifdef _WIN32
@@ -70,6 +73,7 @@ void keyboardHandler()
     {
         if (_kbhit())
         {
+            // Get the key press without echoing it to the console
             char ch = _getch();
             if (ch == 'q')
             {
@@ -86,6 +90,7 @@ void keyboardHandler()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 #else
+    // Save the current terminal settings and disable canonical mode and echo
     termios oldt, newt;
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
@@ -113,6 +118,7 @@ void keyboardHandler()
 #endif
 }
 
+// Display the current state of the traffic light
 void displayLight(State state)
 {
     std::string strState;
@@ -134,10 +140,12 @@ void displayLight(State state)
 
 void trafficLight(int green, int yellow, int red, int buttonTime)
 {
+    // Set initial state to green
     State state = State::GREEN;
 
     while (isRunning)
     {
+        // Wait for button press or state change
         bool buttonPressScope = false;
         {
             std::unique_lock<std::mutex> lck(mtx);
@@ -150,9 +158,11 @@ void trafficLight(int green, int yellow, int red, int buttonTime)
             }
         }
 
+        // Don't change state if the program is exiting
         if (!isRunning)
             break;
 
+        // If button is pressed and the state is not red, change to red and let the pedestrian cross
         if (buttonPressScope && state != State::RED)
         {
             state              = State::RED;
@@ -163,6 +173,7 @@ void trafficLight(int green, int yellow, int red, int buttonTime)
 
         displayLight(state);
 
+        // Change state based on current state
         switch (state)
         {
             case State::GREEN:
