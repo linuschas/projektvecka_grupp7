@@ -57,9 +57,12 @@ int main()
     std::thread tTrafficLight(trafficLight);
     std::thread tKeyboardHandler(keyboardHandler);
 
+    tKeyboardHandler.join();
+    isRunning = false;
+    cv.notify_all();
+
     tButton.join();
     tTrafficLight.join();
-    tKeyboardHandler.join();
 
     return 0;
 }
@@ -70,12 +73,11 @@ void sleepWithInterrupt(int seconds)
 {
     for (int i = 0; i < seconds * 10; ++i)
     {
-        std::unique_lock<std::mutex> lck(mtx);
-        if (cv.wait_for(lck, std::chrono::milliseconds(100),
-                        [] { return buttonPress || !isRunning; }))
-        {
-            return;
-        }
+        if (!isRunning)
+            break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (buttonPress)
+            break;
     }
 }
 
@@ -94,18 +96,15 @@ void keyboardHandler()
                 isRunning = false;
                 cv.notify_all();
             }
-            else
+            else if (!pedestrianCrossing)
             {
-                std::lock_guard<std::mutex> lck(mtx);
-                if (!pedestrianCrossing)
-                {
-                    buttonPress = true;
-                    cv.notify_all();
-                }
+                buttonPress = true;
+                cv.notify_all();
             }
         }
+    }
         // Reduce CPU usage
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 #else
     // Save the current terminal settings and disable canonical mode and echo
@@ -123,17 +122,13 @@ void keyboardHandler()
             isRunning = false;
             cv.notify_all();
         }
-        else
+        else if (!pedestrianCrossing)
         {
-            std::lock_guard<std::mutex> lck(mtx);
-            if (!pedestrianCrossing)
-            {
-                buttonPress = true;
-                cv.notify_all();
-            }
+            buttonPress = true;
+            cv.notify_all();
         }
         // Reduce CPU usage
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
@@ -188,12 +183,11 @@ void trafficLight()
         if (!isRunning)
             break;
 
-        // If button is pressed and the state is not red, change to red and let the pedestrian cross
+        // If button is pressed and the state is not red, change to yellow and then red
         if (buttonPressScope && state != State::RED && !pedestrianCrossing)
         {
             std::lock_guard<std::mutex> lck(mtx);
             state              = State::YELLOW_AFTER_GREEN;
-            buttonPress        = false;
             pedestrianCrossing = true;
             std::cout << "Button is pressed.\n";
         }
