@@ -127,8 +127,6 @@ void keyboardHandler()
             buttonPress = true;
             cv.notify_all();
         }
-        // Reduce CPU usage
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
@@ -234,11 +232,10 @@ void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* button
 {
     std::random_device rd;
     std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(20, 30);
 
     while (*isRunning)
     {
-        // std::cout << "Hello from button simulator.\n";
-        std::uniform_int_distribution<> dist(20, 30);
         int randNum = dist(gen);
 
         if (!isRunning->load())
