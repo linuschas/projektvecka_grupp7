@@ -1,7 +1,7 @@
 /*
     Traffic light simulation with pedestrian crossing button.
     The traffic light has three states: green, yellow, and red.
-    The traffic light stays green for 10 seconds, yellow for 3 seconds, and red for 10 seconds.
+    The traffic light stays green until the pedestrian crossing button is pressed via keyboard or simulated button press.
     The pedestrian crossing button is pressed every 20-30 seconds to simulate crossing.
     When the button is pressed, the traffic light changes to red and the pedestrian can cross.
     The pedestrian crossing takes 20 seconds.
@@ -41,8 +41,16 @@ enum class State
 {
     GREEN,
     YELLOW_AFTER_GREEN,
-    YELLOW_AFTER_RED,
-    RED
+    RED,
+    YELLOW_AFTER_RED
+};
+
+enum class PedestrianState
+{
+    GREEN,
+    YELLOW_AFTER_GREEN,
+    RED,
+    YELLOW_AFTER_RED
 };
 
 void buttonSimulator(const std::atomic_bool* isRunning, std::atomic_bool* buttonPress,
@@ -134,9 +142,11 @@ void keyboardHandler()
 }
 
 // Display the current state of the traffic light
-void displayLight(const State& state)
+void displayLight(const State& state, const PedestrianState& pedState)
 {
-    std::string strState;
+    std::string strState = "";
+    std::string strPedState = "";
+
     switch (state)
     {
         case State::GREEN:
@@ -152,8 +162,25 @@ void displayLight(const State& state)
             strState = "\033[31mRED\033[0m";
             break;
     }
+
+    switch (pedState)
+    {
+        case PedestrianState::GREEN:
+            strPedState = "\033[32mGREEN\033[0m";
+            break;
+        case PedestrianState::YELLOW_AFTER_GREEN:
+            strPedState = "\033[33mYELLOW\033[0m";
+            break;
+        case PedestrianState::YELLOW_AFTER_RED:
+            strPedState = "\033[33mYELLOW\033[0m";
+            break;
+        case PedestrianState::RED:
+            strPedState = "\033[31mRED\033[0m";
+            break;
+    }
+
     std::lock_guard<std::mutex> lck(mtx);
-    std::cout << "Traffic light state: " << strState
+    std::cout << "Traffic light state: " << strState << " Pedestrian light state: " << strPedState
               << (pedestrianCrossing ? " (Pedestrian crossing)" : "") << "\n";
 }
 
@@ -161,6 +188,7 @@ void trafficLight()
 {
     // Set initial state to green
     State state = State::GREEN;
+    PedestrianState pedState = PedestrianState::RED;
 
     while (isRunning)
     {
@@ -175,6 +203,7 @@ void trafficLight()
                 buttonHandled      = true;
                 buttonPress        = false;
                 state              = State::YELLOW_AFTER_GREEN;
+                pedState           = PedestrianState::YELLOW_AFTER_RED;
                 pedestrianCrossing = true;
                 std::cout << "Button is pressed.\n";
             }
@@ -184,7 +213,7 @@ void trafficLight()
         if (!isRunning)
             break;
 
-        displayLight(state);
+        displayLight(state, pedState);
 
         // Change state based on current state
         switch (state)
@@ -192,19 +221,25 @@ void trafficLight()
             case State::GREEN:
                 sleepWithInterrupt(GREEN_TIME);
                 if (pedestrianCrossing)
-                    state = State::YELLOW_AFTER_GREEN;
+                {
+                    state    = State::YELLOW_AFTER_GREEN;
+                    pedState = PedestrianState::YELLOW_AFTER_GREEN;
+                }
                 break;
             case State::YELLOW_AFTER_GREEN:
                 sleepWithInterrupt(YELLOW_TIME);
-                state = State::RED;
+                state    = State::RED;
+                pedState = PedestrianState::GREEN;
                 break;
             case State::RED:
                 sleepWithInterrupt(BUTTON_TIME);
-                state = State::YELLOW_AFTER_RED;
+                state    = State::YELLOW_AFTER_RED;
+                pedState = PedestrianState::YELLOW_AFTER_GREEN;
                 break;
             case State::YELLOW_AFTER_RED:
                 sleepWithInterrupt(YELLOW_TIME);
                 state              = State::GREEN;
+                pedState           = PedestrianState::RED;
                 pedestrianCrossing = false;
                 break;
         }
