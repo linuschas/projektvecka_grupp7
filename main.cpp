@@ -103,9 +103,9 @@ void keyboardHandler()
             }
         }
     }
-        // Reduce CPU usage
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    // Reduce CPU usage
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+}
 #else
     // Save the current terminal settings and disable canonical mode and echo
     termios oldt, newt;
@@ -210,7 +210,6 @@ void trafficLight()
                 state = State::GREEN;
                 if (pedestrianCrossing)
                 {
-                    std::lock_guard<std::mutex> lck(mtx);
                     pedestrianCrossing = false;
                 }
                 break;
