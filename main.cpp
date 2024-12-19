@@ -140,16 +140,16 @@ void displayLight(const State& state)
     switch (state)
     {
         case State::GREEN:
-            strState = "GREEN";
+            strState = "\033[32mGREEN\033[0m";
             break;
         case State::YELLOW_AFTER_GREEN:
-            strState = "YELLOW";
+            strState = "\033[33mYELLOW\033[0m";
             break;
         case State::YELLOW_AFTER_RED:
-            strState = "YELLOW";
+            strState = "\033[33mYELLOW\033[0m";
             break;
         case State::RED:
-            strState = "RED";
+            strState = "\033[31mRED\033[0m";
             break;
     }
     std::lock_guard<std::mutex> lck(mtx);
