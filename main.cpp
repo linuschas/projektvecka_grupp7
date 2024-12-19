@@ -136,7 +136,7 @@ void keyboardHandler()
 }
 
 // Display the current state of the traffic light
-void displayLight(State state)
+void displayLight(const State& state)
 {
     std::string strState;
     switch (state)
