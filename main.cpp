@@ -145,25 +145,20 @@ void displayLight(const State& state, const PedestrianState& pedState)
 {
     std::string strState;
     std::string strPedState;
-    std::string colorCode;
 
     switch (state)
     {
         case State::GREEN:
             strState = "\033[32mGREEN\033[0m";
-            colorCode = "\033[32m";
             break;
         case State::YELLOW_AFTER_GREEN:
             strState = "\033[33mYELLOW\033[0m";
-            colorCode = "\033[33m";
             break;
         case State::YELLOW_AFTER_RED:
             strState = "\033[33mYELLOW\033[0m";
-            colorCode = "\033[33m";
             break;
         case State::RED:
             strState = "\033[31mRED\033[0m";
-            colorCode = "\033[31m";
             break;
     }
 
@@ -171,19 +166,15 @@ void displayLight(const State& state, const PedestrianState& pedState)
     {
         case PedestrianState::GREEN:
             strPedState = "\033[32mGREEN\033[0m";
-            colorCode = "\033[32m";
             break;
         case PedestrianState::YELLOW_AFTER_GREEN:
             strPedState = "\033[33mYELLOW\033[0m";
-            colorCode = "\033[33m";
             break;
         case PedestrianState::YELLOW_AFTER_RED:
             strPedState = "\033[33mYELLOW\033[0m";
-            colorCode = "\033[33m";
             break;
         case PedestrianState::RED:
             strPedState = "\033[31mRED\033[0m";
-            colorCode = "\033[31m";
             break;
     }
 
