@@ -165,30 +165,24 @@ void trafficLight()
     while (isRunning)
     {
         // Wait for button press or state change
-        bool buttonPressScope = false;  // Avoid race condition and change state only once
+        bool buttonHandled = false;  // Avoid race condition and change state only once
         {
             std::unique_lock<std::mutex> lck(mtx);
             cv.wait(lck, [] { return buttonPress || isRunning; });
 
-            if (buttonPress)
+            if (buttonPress && state != State::RED && !pedestrianCrossing)
             {
-                buttonPressScope = true;
-                buttonPress      = false;
+                buttonHandled      = true;
+                buttonPress        = false;
+                state              = State::YELLOW_AFTER_GREEN;
+                pedestrianCrossing = true;
+                std::cout << "Button is pressed.\n";
             }
         }
 
         // Don't change state if the program is exiting
         if (!isRunning)
             break;
-
-        // If button is pressed and the state is not red, change to yellow and then red
-        if (buttonPressScope && state != State::RED && !pedestrianCrossing)
-        {
-            std::lock_guard<std::mutex> lck(mtx);
-            state              = State::YELLOW_AFTER_GREEN;
-            pedestrianCrossing = true;
-            std::cout << "Button is pressed.\n";
-        }
 
         displayLight(state);
 
@@ -197,30 +191,21 @@ void trafficLight()
         {
             case State::GREEN:
                 sleepWithInterrupt(GREEN_TIME);
-                state = State::YELLOW_AFTER_GREEN;
+                if (pedestrianCrossing)
+                    state = State::YELLOW_AFTER_GREEN;
                 break;
             case State::YELLOW_AFTER_GREEN:
                 sleepWithInterrupt(YELLOW_TIME);
                 state = State::RED;
                 break;
+            case State::RED:
+                sleepWithInterrupt(BUTTON_TIME);
+                state = State::YELLOW_AFTER_RED;
+                break;
             case State::YELLOW_AFTER_RED:
                 sleepWithInterrupt(YELLOW_TIME);
-                state = State::GREEN;
-                if (pedestrianCrossing)
-                {
-                    pedestrianCrossing = false;
-                }
-                break;
-            case State::RED:
-                if (pedestrianCrossing)
-                {
-                    sleepWithInterrupt(BUTTON_TIME);
-                }
-                else
-                {
-                    sleepWithInterrupt(RED_TIME);
-                }
-                state = State::YELLOW_AFTER_RED;
+                state              = State::GREEN;
+                pedestrianCrossing = false;
                 break;
         }
     }
