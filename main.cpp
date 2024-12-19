@@ -1,13 +1,12 @@
 /*
     Traffic light simulation with pedestrian crossing button.
     The traffic light has three states: green, yellow, and red.
-    The traffic light stays green until the pedestrian crossing button is pressed via keyboard or simulated button press.
-    The pedestrian crossing button is pressed every 20-30 seconds to simulate crossing.
-    When the button is pressed, the traffic light changes to red and the pedestrian can cross.
-    The pedestrian crossing takes 20 seconds.
-    The traffic light changes to green after the pedestrian has crossed.
-    Button press can also be simulated by pressing any key.
-    The program can be exited by pressing 'q'.
+    The traffic light stays green until the pedestrian crossing button is pressed via keyboard or
+   simulated button press. The pedestrian crossing button is pressed every 20-30 seconds to simulate
+   crossing. When the button is pressed, the traffic light changes to red and the pedestrian can
+   cross. The pedestrian crossing takes 20 seconds. The traffic light changes to green after the
+   pedestrian has crossed. Button press can also be simulated by pressing any key. The program can
+   be exited by pressing 'q'.
 */
 
 #include <atomic>
@@ -144,22 +143,27 @@ void keyboardHandler()
 // Display the current state of the traffic light
 void displayLight(const State& state, const PedestrianState& pedState)
 {
-    std::string strState = "";
-    std::string strPedState = "";
+    std::string strState;
+    std::string strPedState;
+    std::string colorCode;
 
     switch (state)
     {
         case State::GREEN:
             strState = "\033[32mGREEN\033[0m";
+            colorCode = "\033[32m";
             break;
         case State::YELLOW_AFTER_GREEN:
             strState = "\033[33mYELLOW\033[0m";
+            colorCode = "\033[33m";
             break;
         case State::YELLOW_AFTER_RED:
             strState = "\033[33mYELLOW\033[0m";
+            colorCode = "\033[33m";
             break;
         case State::RED:
             strState = "\033[31mRED\033[0m";
+            colorCode = "\033[31m";
             break;
     }
 
@@ -167,15 +171,19 @@ void displayLight(const State& state, const PedestrianState& pedState)
     {
         case PedestrianState::GREEN:
             strPedState = "\033[32mGREEN\033[0m";
+            colorCode = "\033[32m";
             break;
         case PedestrianState::YELLOW_AFTER_GREEN:
             strPedState = "\033[33mYELLOW\033[0m";
+            colorCode = "\033[33m";
             break;
         case PedestrianState::YELLOW_AFTER_RED:
             strPedState = "\033[33mYELLOW\033[0m";
+            colorCode = "\033[33m";
             break;
         case PedestrianState::RED:
             strPedState = "\033[31mRED\033[0m";
+            colorCode = "\033[31m";
             break;
     }
 
@@ -187,7 +195,7 @@ void displayLight(const State& state, const PedestrianState& pedState)
 void trafficLight()
 {
     // Set initial state to green
-    State state = State::GREEN;
+    State state              = State::GREEN;
     PedestrianState pedState = PedestrianState::RED;
 
     while (isRunning)
